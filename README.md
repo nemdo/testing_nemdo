@@ -68,7 +68,7 @@ total_nodes_list = [10, 20, 50, 100]
 ```
 
 Each value corresponds to the number of nodes per spatial dimension.
-The total number of particles is therefore: $N = (\text{total_points})^2$
+The total number of particles is therefore: $N = (\text{total\_nodes})^2$
 
 
 --- 
