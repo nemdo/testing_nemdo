@@ -2,7 +2,6 @@
 .idea/
 __pycache__/
 gnn_graphs/
-models/trained_model
 results_*
 .DS_Store
 plots
