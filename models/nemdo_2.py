@@ -116,7 +116,7 @@ class GraphLayer(MessagePassing):
         return node_feature_out#, edge_upd
 
 
-class StencilGNN(nn.Module):
+class NEMDO2(nn.Module):
     def __init__(self,
                  embedding_size: int,
                  layers: int,

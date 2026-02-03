@@ -1,6 +1,6 @@
-from gnn.preproc import load_gnn
+from models.preproc import load_gnn
 import torch
-from gnn.preproc import calc_moments_torch
+from models.preproc import calc_moments_torch
 from scipy.spatial import cKDTree
 from tqdm import tqdm
 from functions.nodes import neighbour_nodes_kdtree
@@ -12,20 +12,18 @@ def count_parameters(model):
 
 def gnn_weights(coordinates, h, total_nodes, nodes_in_domain):
 
-    # used to check moments
-    approximation_order = 2
-
     # size of the stencil
-    num_neighbours = 20
+    num_neighbours = 35
     tree = cKDTree(coordinates)
-    # best x model gnn/trained_model/attrs29_epoch1096.pth class n_gnn
-    # best lap model gnn/trained_model/attrs30_epoch796.pth class n_gnn
-    # import trained model
-    # models used: n_gnn, m67, small
-    model_x, _ = load_gnn(model_class='m67',
-                          path='gnn/trained_model/attrs67_epoch1989.pth') # model for x derivative
-    model_laplace, _ = load_gnn(model_class='small',
-                                path='gnn/trained_model/attrs63.pth')  # model for laplace
+    # Below we detail the number of neighbours for each model
+    # nemdo_x and nemdo_lap: 35
+    # Below are the two mo
+    # nemdo_1: 10 (computes x-derivative weights)
+    # nemdo_2: 15 (computes x-derivative weights)
+    model_x, _ = load_gnn(model_class='x_and_lap',
+                          path='models/trained_model/nemdo_x.pth') # model for x derivative
+    model_laplace, _ = load_gnn(model_class='x_and_lap',
+                                path='models/trained_model/nemdo_lap.pth')  # model for laplace
 
 
     ref_node_ls = []
@@ -118,6 +116,7 @@ def gnn_weights(coordinates, h, total_nodes, nodes_in_domain):
                                         edge_index,
                                         batch)
 
+            # operations below are not optimised
             pred_reshape_x = out_x.view((int(batch[-1]) + 1, -1))
             weights_x.extend(pred_reshape_x.cpu().numpy() / h[:, None])
 

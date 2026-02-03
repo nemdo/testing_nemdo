@@ -7,7 +7,7 @@ import random
 
 def random_matrix(seed: float, shape: tuple, s: float) -> NDArray:
     random.seed(seed)
-    return np.array([[random.uniform(-s/4, s/4) for _ in range(shape[1])] for _ in range(shape[0])])
+    return np.array([[random.uniform(-s*0.25, s*0.25) for _ in range(shape[1])] for _ in range(shape[0])])
 
 
 
@@ -23,7 +23,7 @@ def calc_h(s: float, kernel: int | str) -> float:
     elif isinstance(kernel, str):
         if kernel == 'wc2': h = 1.5 * s
         elif kernel == 'q_s': h = 1.5 * s
-        elif kernel == 'gnn': h = 2.3 * s
+        elif kernel == 'models': h = 2.3 * s
         return h
 
 

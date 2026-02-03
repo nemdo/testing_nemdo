@@ -20,21 +20,18 @@ class AbstractBaseClass:
         # computes the true values of the surface and its differential fields
         self.surface_value = test_function(self.coordinates)
         self.dtdx_true     = dif_analytical(self.coordinates, 'dtdx')
-        self.dtdy_true     = dif_analytical(self.coordinates, 'dtdy')
         self.laplace_true  = laplace_phi(self.coordinates)
 
 
     def approx_diff_op(self):
         # computes the discrete differential fields
         self.dtdx_approx    = dif_do(self.x, self.surface_value, self._neigh_coor)
-        #self.dtdy_approx    = dif_do(self.y, self.surface_value, self._neigh_coor)
         self.laplace_approx = dif_do(self.laplace, self.surface_value, self._neigh_coor)
 
 
     def calc_l2(self):
         # computes relative L2 error
         self.dx_l2       = calc_l2(self.dtdx_approx, self.dtdx_true)
-        #self.dy_l2       = calc_l2(self.dtdy_approx, self.dtdy_true)
         self.laplace_l2  = calc_l2(self.laplace_approx, self.laplace_true)
 
 
@@ -57,7 +54,7 @@ class LABFM(AbstractBaseClass):
 class GNN(AbstractBaseClass):
     def __init__(self, total_nodes):
         self.s = 1.0 / (total_nodes - 1)
-        super().__init__(total_nodes, 'gnn')
+        super().__init__(total_nodes, 'models')
         (self.x,
          self.laplace,
          self._neigh_coor,
@@ -105,9 +102,9 @@ def run(total_nodes_list, kernel_list):
         if k in [2, 3, 4, 6, 8]: kernel, args = LABFM, (k, total_nodes)
         elif k == 'q_s': kernel = QSPline
         elif k == 'wc2': kernel = WLandC2
-        elif k == 'gnn': kernel = GNN
+        elif k == 'models': kernel = GNN
         else: raise ValueError(" kernel must be either polynomial order for labfm (2, 3, 4, 6, 8), or one of "
-                               "the following kernels 'wc2', 'q_s', 'gnn'")
+                               "the following kernels 'wc2', 'q_s', 'models'")
 
         sim = kernel(*args)
         result[(total_nodes, k)] = sim

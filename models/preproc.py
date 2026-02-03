@@ -1,9 +1,6 @@
-from gnn.MessageGNN import MessagePassingGNN
-from gnn.AttenGNN import AMessagePassingGNN
-from gnn.SNA_GNN import csf_gnn
-from gnn.Node_GNN import NodeMessagePassingGNN
-from gnn.stencil_model import StencilGNN
-from gnn.m63 import SmallGNN
+from models.nemdo_x_and_lap import NEMDO_X_LAP
+from models.nemdo_1 import NEMDO1
+from models.nemdo_2 import NEMDO2
 import logging
 import pickle as pk
 from collections import OrderedDict
@@ -12,14 +9,12 @@ import torch
 from torch.optim import Adam
 import math
 from torch_geometric.nn.aggr import SumAggregation
-from gnn.m65 import m65
-from gnn.m67 import m67
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def load_gnn(path, model_class='gnn'):
+def load_gnn(path, model_class):
 
     attrs = torch.load(path,
                        map_location='cpu',
@@ -28,30 +23,17 @@ def load_gnn(path, model_class='gnn'):
     layers = attrs['layers']
     embedding_size = attrs['embedding_size']
 
-    if model_class.lower() == 'gnn':
-        model_instance = MessagePassingGNN(embedding_size=embedding_size,
+    if model_class.lower() == 'x_and_lap':
+        model_instance = NEMDO_X_LAP(embedding_size=embedding_size,
                                            layers=layers)
-    elif model_class.lower() == 'a_gnn':
-        model_instance = AMessagePassingGNN(embedding_size=embedding_size,
-                                           layers=layers)
-    elif model_class.lower() == 'n_gnn':
-        model_instance = NodeMessagePassingGNN(embedding_size=embedding_size,
-                                           layers=layers)
-    elif model_class.lower() == 'stencil':
-        model_instance = StencilGNN(embedding_size=embedding_size,
+    elif model_class.lower() == 'nemdo_1':
+        model_instance = NEMDO1(embedding_size=embedding_size,
                                     layers=layers)
-    elif model_class.lower() == 'small':
-        model_instance = SmallGNN(embedding_size=embedding_size,
+    elif model_class.lower() == 'nemdo_2':
+        model_instance = NEMDO2(embedding_size=embedding_size,
                                     layers=layers)
-    elif model_class.lower() == 'm65':
-        model_instance = m65(embedding_size=embedding_size,
-                                    layers=layers)
-    elif model_class.lower() == 'm67':
-        model_instance = m67(embedding_size=embedding_size,
-                             layers=layers)
     else:
-        model_instance = csf_gnn(embedding_size=embedding_size,
-                                            layers=layers)
+        raise ValueError
 
     weight_dict = OrderedDict()
     weight_dict.update(

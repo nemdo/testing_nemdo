@@ -31,120 +31,6 @@ mpl.rcParams.update({
     "font.family": "serif",
     "axes.unicode_minus": False,
 })
-def plot_stability(
-    results: dict,
-    kernel: str | int,
-    resolution: int,
-    diff_operator: str,
-    save: bool = False,
-    filename: str = "spectrum.pdf",
-    column: str = "single",        # "single" or "double"
-    show_axes0: bool = True,
-    point_size: float = 8.0,
-) -> None:
-    print('Computing eigenvalues')
-    # (results, model_or_polynomial, resolution, diff_operator)
-
-    if kernel not in [2, 4, 5, 8, 'gnn', 'wc2', 'q_s']:
-        raise ValueError("Value of the kernel should either be a LABFM polynomial"
-                         " in results one of the following kernels 'gnn', 'wc2' "
-                         "'q_s'")
-
-
-    if diff_operator not in ['dx', 'dy', 'laplace']:
-        raise ValueError("Differential operator must be one of the following"
-                         " 'dx', 'dy', or 'laplace'")
-
-    # extract the correct results from variable results that has the desired resolution
-    # and the kernel specified
-    if (resolution, kernel) not in results.keys():
-        raise ValueError('Kernel-resolution combination specified not in results')
-
-    # extracting all attributes from object
-    attrs = results[(resolution, kernel)]
-
-    # extracting weights from attributes
-    if diff_operator == 'dx': weights = attrs.x
-    if diff_operator == 'dy': weights = attrs.y
-    if diff_operator == 'laplace': weights = attrs.laplace
-
-    h = attrs.h
-    # extracting coordinates from attributes
-    coor = attrs.coordinates
-    neigh_coor = attrs._neigh_coor
-
-    # surface value is not actually required, I only need the order of the position of the nodes i.e. coor
-    A = np.zeros((len(coor), len(coor)))
-
-    coord_to_idx = {tuple(x): i for i, x in enumerate(coor)}
-
-
-    if isinstance(h, dict):
-        for i in range(len(coor)):
-            loc = coor[i]
-            if tuple(loc) not in weights.keys(): continue
-
-            for j in range(neigh_coor[tuple(loc)].shape[0]):
-                n_j = neigh_coor[tuple(loc)][j]
-                neigh_idx = coord_to_idx[tuple(n_j)]
-                A[i, neigh_idx] = np.array(weights[tuple(loc)][j] * h[tuple(loc)])
-
-            A[i, i] = 0
-            A[i, i] = - np.sum(A[i, :])
-    else:
-        #if diff_operator == 'laplace': h = h ** 2
-        for i in range(len(coor)):
-            loc = coor[i]
-            if tuple(loc) not in weights.keys(): continue
-
-            for j in range(neigh_coor[tuple(loc)].shape[0]):
-                n_j = neigh_coor[tuple(loc)][j]
-                neigh_idx = coord_to_idx[tuple(n_j)]
-                A[i, neigh_idx] = np.array(weights[tuple(loc)][j]*h)
-
-            A[i, i] = 0
-            A[i, i] = - np.sum(A[i, :])
-
-
-    vals = np.linalg.eigvals(A)
-
-    real_parts = vals.real
-    imag_parts = vals.imag
-
-    figsize = (3.25, 2.6) if column == "single" else (6.75, 2.8)
-    fig, ax = plt.subplots(figsize=figsize)
-
-    ax.scatter(
-        real_parts,
-        imag_parts,
-        s=point_size,
-        alpha=0.8,
-        linewidths=0,
-    )
-
-    # Axis labels with μ (not λ)
-    #ax.set_xlabel(r"$\mathrm{Re}(\mu)$", fontsize=9)
-    #ax.set_ylabel(r"$\mathrm{Im}(\mu)$", fontsize=9)
-    ax.tick_params(labelsize=8)
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    if show_axes0:
-        ax.axhline(0.0, linewidth=0.8)
-        ax.axvline(0.0, linewidth=0.8)
-
-    ax.grid(True, which="major", linewidth=0.35)
-    ax.grid(True, which="minor", linestyle=":", linewidth=0.25)
-    ax.minorticks_on()
-
-    fig.tight_layout()
-
-    if save:
-        fig.savefig(filename, bbox_inches="tight", pad_inches=0.01, transparent=True)
-        plt.close(fig)
-    else:
-        plt.show()
 
 def plot_stability_multi(
     results: dict,
@@ -161,8 +47,8 @@ def plot_stability_multi(
     legend: bool = True,
 ) -> None:
 
-    if diff_operator not in ["dx", "dy", "laplace"]:
-        raise ValueError("diff_operator must be one of: 'dx', 'dy', 'laplace'")
+    if diff_operator not in ["dx", "laplace"]:
+        raise ValueError("diff_operator must be one of: 'dx', 'laplace'")
 
     if labels is None:
         labels = {
@@ -172,7 +58,7 @@ def plot_stability_multi(
             8: r"LABFM ($p=8$)",
             "q_s": r"Quintic spline",
             "wc2": r"Wendland C2",
-            "gnn": r"GNN$_{p=2}$(ours)",
+            "models": r"GNN$_{p=2}$(ours)",
         }
 
     figsize = (3.25, 2.6) if column == "single" else (6.75, 2.8)
@@ -183,7 +69,7 @@ def plot_stability_multi(
         # bottom → top: LABFM, GNN, WC2, Q_S
         if isinstance(k, int):  # LABFM orders
             return (0, k)
-        if k == "gnn":
+        if k == "models":
             return (1, 0)
         if k == "wc2":
             return (2, 0)
@@ -199,7 +85,7 @@ def plot_stability_multi(
             return (1, k)
         if k == "q_s":
             return (2, 0)
-        if k == "gnn":
+        if k == "models":
             return (3, 0)
         return (4, 0)
 
@@ -218,7 +104,7 @@ def plot_stability_multi(
         8: "tab:gray",
         "q_s": "tab:purple",
         "wc2": "tab:cyan",
-        "gnn": "tab:orange",
+        "models": "tab:orange",
     }
     legend_done: set[str] = set()
 
@@ -237,8 +123,6 @@ def plot_stability_multi(
 
         if diff_operator == "dx":
             weights = attrs.x
-        elif diff_operator == "dy":
-            weights = attrs.y
         else:
             weights = attrs.laplace
 
@@ -325,7 +209,7 @@ def plot_stability_multi(
         plt.show()
 
 
-def plot_resolving_p_real(
+def plot_resolving_p(
     results,
     save=False,
     filename_prefix="resolving_power",
@@ -357,7 +241,7 @@ def plot_resolving_p_real(
         8: r"LABFM ($p=8$)",
         "q_s": r"Quintic spline",
         "wc2": r"Wendland C2",
-        "gnn": r"GNN$_{p=2}$(ours)",
+        "models": r"GNN$_{p=2}$(ours)",
     }
 
     colors = {
@@ -367,7 +251,7 @@ def plot_resolving_p_real(
         8: "tab:gray",
         "q_s": "tab:purple",
         "wc2": "tab:cyan",
-        "gnn": "tab:orange",
+        "models": "tab:orange",
     }
 
     figsize = (3.25, 2.6) if column == "single" else (6.75, 2.8)
@@ -561,7 +445,7 @@ def plot_convergence(
 ):
 
     # --- Collect data
-    allowed = [2, 4, 6, 8, "q_s", "wc2", "gnn"]
+    allowed = [2, 4, 6, 8, "q_s", "wc2", "models"]
     poly_data = {}
 
     for k, v in results.items():
@@ -586,7 +470,7 @@ def plot_convergence(
         8: "tab:gray",
         "q_s": "tab:purple",
         "wc2": "tab:cyan",
-        "gnn": "tab:orange",
+        "models": "tab:orange",
     }
     labels = {
         2: r"LABFM$_{p=2}$",
@@ -595,7 +479,7 @@ def plot_convergence(
         8: r"LABFM ($p=8$)",
         "q_s": r"Quintic spline",
         "wc2": r"Wendland C2",
-        "gnn": r"GNN$_{p=2}$(ours)",
+        "models": r"GNN$_{p=2}$(ours)",
     }
 
     # --- Figure size (ICML)
@@ -608,7 +492,7 @@ def plot_convergence(
 
     # --- Plot each method/degree (sorted)
     # Prefer a deterministic order in legend
-    order = [2, 4, 6, 8, "q_s", "wc2", "gnn"]
+    order = [2, 4, 6, 8, "q_s", "wc2", "models"]
     for key in order:
         if key not in poly_data:
             continue
